@@ -6,8 +6,8 @@
 
 目前实现功能：
 - [x] 链接监听
-- [] 数据包处理
-- [] 服务器主循环
+- [ ] 数据包处理
+- [ ] 服务器主循环
 
 __链接监听__
 
@@ -30,4 +30,4 @@ info: ServerKestrel.MirConnectionHandler[0]
 
 代码参考：
  * https://github.com/Suprcode/mir2
- * https://github.com/Suprcode/mir2
+ * https://github.com/xljiulang/KestrelApp
