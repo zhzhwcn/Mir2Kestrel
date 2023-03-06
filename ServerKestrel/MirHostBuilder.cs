@@ -23,20 +23,21 @@ namespace ServerKestrel
         internal MirHostBuilder ConfigureServices()
         {
             var settings = Settings.Load();
-            _builder.WebHost.ConfigureServices(((context, services) =>
+            _builder.Services.AddSingleton(settings);
+            _builder.Services.AddSingleton<GamePacketProcessor>();
+            _builder.Services.AddSingleton<PacketDispatcher>();
+
+            PacketDispatcher.LoadPacketHandlers(_builder.Services);
+
+            _builder.WebHost.UseUrls();
+            _builder.WebHost.ConfigureKestrel(((context, options) =>
             {
-                services.AddSingleton(settings);
-                services.AddSingleton<GamePacketProcessor>();
-                services.AddSingleton<PacketDispatcher>();
-            }));
-            _builder.WebHost.UseKestrel((context, options) =>
-            {
-                options.ListenLocalhost(5000);
+                //options.ListenLocalhost(5000);
                 options.Listen(settings.ListenIp, settings.ListenPort, listenOptions =>
                 {
                     listenOptions.UseConnectionHandler<MirConnectionHandler>();
                 });
-            });
+            }));
             return this;
         }
     }

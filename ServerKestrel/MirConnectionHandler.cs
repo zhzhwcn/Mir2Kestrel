@@ -51,13 +51,14 @@ namespace ServerKestrel
                 {
                     break;
                 }
-                _logger.LogInformation("Bytes Read:{}", result.Buffer.Length);
+                _logger.LogDebug("Bytes Read:{}", result.Buffer.Length);
                 var packets = _packetProcessor.Parse(result.Buffer, out var consumed);
                 if (packets.Count > 0)
                 {
                     foreach (var packet in packets)
                     {
-                        _logger.LogInformation("Received Packet[{}]:{}", packet.Index, JsonSerializer.Serialize(packet));
+                        _logger.LogDebug("Received Packet[{}]", (ClientPacketIds)packet.Index);
+                        await _packetDispatcher.DispatchPacket(packet, gameContext);
                     }
                     input.AdvanceTo(consumed);
                 }

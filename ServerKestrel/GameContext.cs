@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Connections;
 
 namespace ServerKestrel
 {
-    internal class GameContext
+    public class GameContext
     {
         private readonly ConnectionContext _connectionContext;
 
@@ -16,11 +16,11 @@ namespace ServerKestrel
             _connectionContext = connectionContext;
         }
 
-        public Player? Player { get; set; }
+        internal Player? Player { get; set; }
 
-        public Task SendPacket()
+        public async ValueTask SendPacket(Packet p)
         {
-            throw new NotImplementedException();
+            await _connectionContext.SendPacket(p);
         }
     }
 }
