@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.1.0" />
+    <PackageReference Include="FreeSql.Provider.Sqlite" Version="3.2.690" />
   </ItemGroup>
 
   <ItemGroup>
