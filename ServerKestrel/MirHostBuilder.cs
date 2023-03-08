@@ -23,9 +23,14 @@ namespace ServerKestrel
         internal MirHostBuilder ConfigureServices()
         {
             var settings = Settings.Load();
+            var fsql = new FreeSql.FreeSqlBuilder()
+                .UseConnectionString(FreeSql.DataType.Sqlite, "data source=user.db")
+                .UseAutoSyncStructure(true) //自动同步实体结构到数据库
+                .Build(); //请务必定义成 Singleton 单例模式
             _builder.Services.AddSingleton(settings);
             _builder.Services.AddSingleton<GamePacketProcessor>();
             _builder.Services.AddSingleton<PacketDispatcher>();
+            _builder.Services.AddSingleton<IFreeSql>(fsql);
 
             PacketDispatcher.LoadPacketHandlers(_builder.Services);
 

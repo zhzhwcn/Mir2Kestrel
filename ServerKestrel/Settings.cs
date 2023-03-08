@@ -15,6 +15,7 @@ namespace ServerKestrel
         public IPAddress ListenIp { get; set; } = IPAddress.Loopback;
 
         public int ListenPort { get; set; } = 7000;
+        public bool AllowNewAccount { get; set; } = true;
 
         public static Settings Load()
         {
