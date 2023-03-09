@@ -6,7 +6,12 @@ using System.Threading.Tasks;
 
 namespace ServerKestrel
 {
-    internal class Player
+    internal interface IPlayer
     {
+    }
+
+    internal interface IAccount
+    {
+        public int Index { get; set; }
     }
 }

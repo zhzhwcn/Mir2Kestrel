@@ -4,7 +4,7 @@ using FreeSql.DataAnnotations;
 
 namespace ServerKestrel.Mir2Amz.Models
 {
-    public class Account
+    internal class Account : IAccount
     {
         [Column(IsIdentity = true, IsPrimary = true)]
         public int Index { get; set; }
@@ -32,5 +32,10 @@ namespace ServerKestrel.Mir2Amz.Models
 
         public string LastIP { get; set; } = string.Empty;
         public DateTime? LastDate = null;
+
+
+        //Navigate
+        [Navigate(nameof(Character.AccountIndex))]
+        public List<Character> Characters { get; set; } = new();
     }
 }

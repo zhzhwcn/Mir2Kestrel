@@ -5,7 +5,7 @@ using CommunityToolkit.HighPerformance;
 
 namespace ServerKestrel
 {
-    public class GamePacketProcessor
+    internal class GamePacketProcessor
     {
         private readonly Dictionary<ClientPacketIds, Type> _clientPacketTypes = new();
         private Dictionary<ServerPacketIds, Type> _serverPacketTypes = new();

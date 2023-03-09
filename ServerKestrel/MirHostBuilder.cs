@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Connections;
+using ServerKestrel.Mir2Amz;
 
 namespace ServerKestrel
 {
@@ -22,6 +23,7 @@ namespace ServerKestrel
 
         internal MirHostBuilder ConfigureServices()
         {
+            _builder.Logging.SetMinimumLevel(LogLevel.Debug);
             var settings = Settings.Load();
             var fsql = new FreeSql.FreeSqlBuilder()
                 .UseConnectionString(FreeSql.DataType.Sqlite, "data source=user.db")
@@ -31,6 +33,7 @@ namespace ServerKestrel
             _builder.Services.AddSingleton<GamePacketProcessor>();
             _builder.Services.AddSingleton<PacketDispatcher>();
             _builder.Services.AddSingleton<IFreeSql>(fsql);
+            _builder.Services.AddSingleton<MainProcess>();
 
             PacketDispatcher.LoadPacketHandlers(_builder.Services);
 

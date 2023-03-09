@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ServerKestrel
 {
-    public class Settings
+    internal class Settings
     {
         private static readonly string SettingsFilePath = "settings.json";
 
@@ -16,6 +16,8 @@ namespace ServerKestrel
 
         public int ListenPort { get; set; } = 7000;
         public bool AllowNewAccount { get; set; } = true;
+        public bool AllowChangePassword { get; set; } = true;
+        public bool AllowLogin { get; set; } = true;
 
         public static Settings Load()
         {

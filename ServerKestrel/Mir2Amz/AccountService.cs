@@ -1,17 +1,29 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Reflection.Emit;
+using System.Reflection;
+using System.Security.Claims;
+using System.Xml.Linq;
+using ClientPackets;
+using FreeSql.Internal;
 using ServerKestrel.Mir2Amz.Models;
 
 namespace ServerKestrel.Mir2Amz
 {
-    public class AccountService
+    internal class AccountService
     {
         private readonly IFreeSql _sql;
         private readonly Settings _settings;
+        private readonly MainProcess _mainProcess;
+        private readonly ILogger<AccountService> _logger;
 
-        public AccountService(IFreeSql sql, Settings settings)
+        private readonly Dictionary<int, GameContext> _accountGameContexts = new();
+
+        public AccountService(IFreeSql sql, Settings settings, MainProcess mainProcess, ILogger<AccountService> logger)
         {
             _sql = sql;
             _settings = settings;
+            _mainProcess = mainProcess;
+            _logger = logger;
         }
 
         private static bool IsEmail(string email)
@@ -19,8 +31,8 @@ namespace ServerKestrel.Mir2Amz
             return new EmailAddressAttribute().IsValid(email);
         }
 
-        [PacketHandle<ClientPackets.NewAccount>]
-        public async ValueTask CreateAccount(ClientPackets.NewAccount p, GameContext context)
+        [PacketHandle<NewAccount>]
+        public async ValueTask CreateAccount(NewAccount p, GameContext context)
         {
             if (!_settings.AllowNewAccount)
             {
@@ -91,6 +103,146 @@ namespace ServerKestrel.Mir2Amz
             var result = await _sql.Insert(account).ExecuteAffrowsAsync();
 
             await context.SendPacket(new ServerPackets.NewAccount { Result = 8 });
+        }
+
+        [PacketHandle<ChangePassword>]
+        public async ValueTask ChangePassword(ChangePassword p, GameContext context)
+        {
+            if (!_settings.AllowChangePassword)
+            {
+                await context.SendPacket(new ServerPackets.ChangePassword { Result = 0 });
+                return;
+            }
+            var account = await _sql.Select<Account>().Where(a => a.AccountID == p.AccountID).ToOneAsync();
+
+            if (account == null)
+            {
+                await context.SendPacket(new ServerPackets.ChangePassword { Result = 4 });
+                return;
+            }
+
+            if (account.Banned)
+            {
+                if (account.ExpiryDate > _mainProcess.Now)
+                {
+                    await context.SendPacket(new ServerPackets.ChangePasswordBanned { Reason = account.BanReason, ExpiryDate = account.ExpiryDate.Value });
+                    return;
+                }
+                account.Banned = false;
+            }
+            account.BanReason = string.Empty;
+            account.ExpiryDate = DateTime.MinValue;
+
+            if (!BCrypt.Net.BCrypt.Verify(p.CurrentPassword, account.Password))
+            {
+                await context.SendPacket(new ServerPackets.ChangePassword { Result = 5 });
+                return;
+            }
+
+            account.Password = BCrypt.Net.BCrypt.HashPassword(p.NewPassword);
+            account.RequirePasswordChange = false;
+            await _sql.Update<Account>(account.Index).SetSource(account).ExecuteAffrowsAsync();
+            await context.SendPacket(new ServerPackets.ChangePassword { Result = 6 });
+        }
+
+        [PacketHandle<Login>]
+        public async ValueTask Login(Login p, GameContext context)
+        {
+            if (!_settings.AllowLogin)
+            {
+                await context.SendPacket(new ServerPackets.Login { Result = 0 });
+                return;
+            }
+
+            var account = await _sql.Select<Account>().Where(a => a.AccountID == p.AccountID).ToOneAsync();
+
+            if (account == null)
+            {
+                await context.SendPacket(new ServerPackets.Login { Result = 3 });
+                return;
+            }
+
+            if (account.Banned)
+            {
+                if (account.ExpiryDate > _mainProcess.Now)
+                {
+                    await context.SendPacket(new ServerPackets.LoginBanned
+                    {
+                        Reason = account.BanReason,
+                        ExpiryDate = account.ExpiryDate.Value
+                    });
+                    await _sql.Update<Account>(account.Index).SetSource(account).ExecuteAffrowsAsync();
+                    return;
+                }
+                account.Banned = false;
+            }
+            account.BanReason = string.Empty;
+            account.ExpiryDate = DateTime.MinValue;
+
+            if (!BCrypt.Net.BCrypt.Verify(p.Password, account.Password))
+            {
+                if (account.WrongPasswordCount++ >= 5)
+                {
+                    account.Banned = true;
+                    account.BanReason = "Too many Wrong Login Attempts.";
+                    account.ExpiryDate = _mainProcess.Now.AddMinutes(2);
+
+                    await context.SendPacket(new ServerPackets.LoginBanned
+                    {
+                        Reason = account.BanReason,
+                        ExpiryDate = account.ExpiryDate.Value
+                    });
+                    await _sql.Update<Account>(account.Index).SetSource(account).ExecuteAffrowsAsync();
+                    return;
+                }
+
+                await context.SendPacket(new ServerPackets.Login { Result = 4 });
+                return;
+            }
+            account.WrongPasswordCount = 0;
+
+            if (account.RequirePasswordChange)
+            {
+                await context.SendPacket(new ServerPackets.Login { Result = 5 });
+                return;
+            }
+
+            if (_accountGameContexts.ContainsKey(account.Index))
+            {
+                if (!_accountGameContexts[account.Index].Disconnected)
+                {
+                    await _accountGameContexts[account.Index].Disconnect(1);
+                }
+
+            }
+
+            context.Account = account;
+            context.Stage = GameStage.Select;
+            _accountGameContexts[account.Index] = context;
+
+            account.LastDate = _mainProcess.Now;
+            account.LastIP = context.ClientIpAddress?.ToString() ?? string.Empty;
+            
+            await _sql.Update<Account>(account.Index).SetSource(account).ExecuteAffrowsAsync();
+            _logger.LogInformation(context.SessionId + ", " + context.ClientIpAddress + ", User logged in.");
+            await context.SendPacket(new ServerPackets.LoginSuccess { Characters = await GetSelectInfo(account) });
+        }
+
+        private async Task<List<SelectInfo>> GetSelectInfo(Account account)
+        {
+            var list = await _sql.Select<Character>().Where(c => c.AccountIndex == account.Index && !c.Deleted)
+                .Limit(Globals.MaxCharacterCount)
+                .ToListAsync(c => new SelectInfo()
+                {
+                    Index = c.Index,
+                    Name = c.Name,
+                    Level = c.Level,
+                    Class = c.Class,
+                    Gender = c.Gender,
+                    LastAccess = c.LastLogoutDate
+                });
+
+            return list;
         }
     }
 }

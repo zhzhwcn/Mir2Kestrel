@@ -1,6 +1,6 @@
 ﻿namespace ServerKestrel.Mir2Amz
 {
-    public class BaseGameService
+    internal class BaseGameService
     {
         [PacketHandle<ClientPackets.ClientVersion>]
         public async ValueTask CheckClientVersion(ClientPackets.ClientVersion packet, GameContext context)

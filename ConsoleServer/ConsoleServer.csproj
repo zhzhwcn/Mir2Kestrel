@@ -7,6 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="settings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="settings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Alexinea.Extensions.Configuration.Toml" Version="6.0.0" />
   </ItemGroup>
 

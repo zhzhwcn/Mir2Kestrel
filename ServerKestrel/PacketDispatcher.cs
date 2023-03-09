@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ServerKestrel
 {
     [AttributeUsage(AttributeTargets.Method)]
-    public class PacketHandleAttribute : Attribute
+    internal class PacketHandleAttribute : Attribute
     {
         public Type HandleType { get; }
 
@@ -14,12 +14,12 @@ namespace ServerKestrel
         }
     }
     [AttributeUsage(AttributeTargets.Method)]
-    public class PacketHandleAttribute<TPacket> : PacketHandleAttribute where TPacket : Packet
+    internal class PacketHandleAttribute<TPacket> : PacketHandleAttribute where TPacket : Packet
     {
         public PacketHandleAttribute() : base(typeof(TPacket))
         {}
     }
-    public class PacketDispatcher
+    internal class PacketDispatcher
     {
         private static readonly Dictionary<ClientPacketIds, MethodInfo> ClientPacketHandlers = new();
 
