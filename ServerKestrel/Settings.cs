@@ -18,6 +18,10 @@ namespace ServerKestrel
         public bool AllowNewAccount { get; set; } = true;
         public bool AllowChangePassword { get; set; } = true;
         public bool AllowLogin { get; set; } = true;
+        public bool AllowNewCharacter { get; set; } = true;
+        public List<string> DisabledCharNames { get; set; } = new();
+        public bool AllowCreateAssassin { get; set; } = false;
+        public bool AllowCreateArcher { get; set; } = false;
 
         public static Settings Load()
         {

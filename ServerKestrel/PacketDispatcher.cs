@@ -6,7 +6,12 @@ namespace ServerKestrel
     [AttributeUsage(AttributeTargets.Method)]
     internal class PacketHandleAttribute : Attribute
     {
-        public Type HandleType { get; }
+        public Type? HandleType { get; }
+
+        public PacketHandleAttribute()
+        {
+
+        }
 
         public PacketHandleAttribute(Type handleType)
         {
@@ -49,7 +54,15 @@ namespace ServerKestrel
                             services.AddSingleton(type);
                         }
 
-                        if (Activator.CreateInstance(handlerInfo.HandleType) is Packet p && Enum.IsDefined(typeof(ClientPacketIds), p.Index))
+                        var packetType = handlerInfo.HandleType;
+                        var parameters = methodInfo.GetParameters();
+                        if (packetType == null && parameters.Length < 1)
+                        {
+                            throw new Exception($"包处理器无法推断类型:[{methodInfo.DeclaringType}.{methodInfo.Name}]");
+                        }
+                        packetType = parameters[0].ParameterType;
+
+                        if (Activator.CreateInstance(packetType) is Packet p && Enum.IsDefined(typeof(ClientPacketIds), p.Index))
                         {
                             var packetId = (ClientPacketIds) p.Index;
                             if (ClientPacketHandlers.ContainsKey(packetId))
@@ -57,10 +70,9 @@ namespace ServerKestrel
                                 throw new Exception("包处理器重复定义:" + packetId);
                             }
 
-                            var parameters = methodInfo.GetParameters();
                             if (parameters.Length > 0)
                             {
-                                if (parameters[0].ParameterType != handlerInfo.HandleType)
+                                if (parameters[0].ParameterType != packetType)
                                 {
                                     throw new Exception($"包处理器所定义参数类型与标记类型不同:[{methodInfo.DeclaringType}.{methodInfo.Name}]");
                                 }

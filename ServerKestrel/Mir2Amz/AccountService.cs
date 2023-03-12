@@ -228,7 +228,7 @@ namespace ServerKestrel.Mir2Amz
             await context.SendPacket(new ServerPackets.LoginSuccess { Characters = await GetSelectInfo(account) });
         }
 
-        private async Task<List<SelectInfo>> GetSelectInfo(Account account)
+        private async Task<List<SelectInfo>> GetSelectInfo(IAccount account)
         {
             var list = await _sql.Select<Character>().Where(c => c.AccountIndex == account.Index && !c.Deleted)
                 .Limit(Globals.MaxCharacterCount)
@@ -243,6 +243,94 @@ namespace ServerKestrel.Mir2Amz
                 });
 
             return list;
+        }
+
+        [PacketHandle]
+        public async Task NewCharacter(NewCharacter p, GameContext context)
+        {
+            if (context.Stage != GameStage.Select)
+            {
+                return;
+            }
+
+            if (context.Account == null)
+            {
+                return;
+            }
+
+            if (!_settings.AllowNewCharacter)
+            {
+                await context.SendPacket(new ServerPackets.NewCharacter { Result = 0 });
+                return;
+            }
+
+            // if (!CharacterReg.IsMatch(p.Name))
+            // {
+            //     await context.SendPacket(new ServerPackets.NewCharacter { Result = 1 });
+            //     return;
+            // }
+
+            if (_settings.DisabledCharNames.Contains(p.Name.ToUpper()))
+            {
+                await context.SendPacket(new ServerPackets.NewCharacter { Result = 1 });
+                return;
+            }
+
+            if (!Enum.IsDefined(p.Gender))
+            {
+                await context.SendPacket(new ServerPackets.NewCharacter { Result = 2 });
+                return;
+            }
+
+            if (!Enum.IsDefined(p.Class))
+            {
+                await context.SendPacket(new ServerPackets.NewCharacter { Result = 3 });
+                return;
+            }
+
+            if (p.Class == MirClass.Assassin && !_settings.AllowCreateAssassin ||
+                p.Class == MirClass.Archer && !_settings.AllowCreateArcher)
+            {
+                await context.SendPacket(new ServerPackets.NewCharacter { Result = 3 });
+                return;
+            }
+
+            var count = await _sql.Select<Character>().Where(c => c.AccountIndex == context.Account.Index && !c.Deleted).CountAsync();
+            if (++count >= Globals.MaxCharacterCount)
+            {
+                await context.SendPacket(new ServerPackets.NewCharacter { Result = 4 });
+                return;
+            }
+
+            if (await _sql.Select<Character>().Where(c => c.Name == p.Name).AnyAsync())
+            {
+                await context.SendPacket(new ServerPackets.NewCharacter { Result = 5 });
+                return;
+            }
+
+            var c = new Character()
+            {
+                AccountIndex = context.Account.Index,
+                Name = p.Name,
+                Class = p.Class,
+                Gender = p.Gender,
+                CreationIP = context.ClientIpAddress?.ToString() ?? "Unknown",
+                CreationDate = _mainProcess.Now,
+            };
+
+            await _sql.Insert(c).ExecuteAffrowsAsync();
+
+            var info = new SelectInfo()
+            {
+                Index = c.Index,
+                Name = c.Name,
+                Level = c.Level,
+                Class = c.Class,
+                Gender = c.Gender,
+                LastAccess = c.LastLogoutDate
+            };
+
+            await context.SendPacket(new ServerPackets.NewCharacterSuccess { CharInfo = info });
         }
     }
 }
