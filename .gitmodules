@@ -1,0 +1,3 @@
+[submodule "aycq"]
+	path = aycq
+	url = https://github.com/zhzhwcn/aycq.git
