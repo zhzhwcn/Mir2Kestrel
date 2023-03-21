@@ -332,5 +332,35 @@ namespace ServerKestrel.Mir2Amz
 
             await context.SendPacket(new ServerPackets.NewCharacterSuccess { CharInfo = info });
         }
+
+        [PacketHandle]
+        public async Task DeleteCharacter(DeleteCharacter p, GameContext context)
+        {
+            if (context.Stage != GameStage.Select || context.Account == null)
+            {
+                return;
+            }
+            
+            if (!_settings.AllowDeleteCharacter)
+            {
+                await context.SendPacket(new ServerPackets.DeleteCharacter { Result = 0 });
+                return;
+            }
+
+            var temp = await _sql.Select<Character>().Where(c => c.Index == p.Index && c.AccountIndex == context.Account.Index).FirstAsync();
+
+            if (temp == null)
+            {
+                await context.SendPacket(new ServerPackets.DeleteCharacter { Result = 1 });
+                return;
+            }
+
+            temp.Deleted = true;
+            temp.DeleteDate = _mainProcess.Now;
+            //TODO:Envir.RemoveRank(temp);
+            await context.SendPacket(new ServerPackets.DeleteCharacterSuccess { CharacterIndex = temp.Index });
+        }
+
+
     }
 }

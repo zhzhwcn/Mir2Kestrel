@@ -22,6 +22,7 @@ namespace ServerKestrel
         public List<string> DisabledCharNames { get; set; } = new();
         public bool AllowCreateAssassin { get; set; } = false;
         public bool AllowCreateArcher { get; set; } = false;
+        public bool AllowDeleteCharacter { get; set; } = true;
 
         public static Settings Load()
         {
