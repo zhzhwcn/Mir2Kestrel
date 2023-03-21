@@ -14,4 +14,9 @@ namespace ServerKestrel
     {
         public int Index { get; set; }
     }
+
+    internal interface IGameDataService
+    {
+        void LoadGameData();
+    }
 }

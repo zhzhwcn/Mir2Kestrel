@@ -22,10 +22,10 @@ namespace ServerKestrel
 
         public static WebApplication UseMirServer(this WebApplication app)
         {
+            var gameDataService = app.Services.GetService<IGameDataService>()!;
+            gameDataService.LoadGameData();
             var packetProcessor = app.Services.GetService<GamePacketProcessor>()!;
             packetProcessor.LoadPacketTypes();
-            var packetDispatcher = app.Services.GetService<PacketDispatcher>()!;
-            //packetDispatcher
             return app;
         }
 
