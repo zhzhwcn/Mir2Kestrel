@@ -1,4 +1,6 @@
-﻿namespace ServerKestrel.Mir2Amz.Models
+﻿using System.Drawing;
+
+namespace ServerKestrel.Mir2Amz.Models
 {
     public class Map
     {
@@ -50,9 +52,25 @@
 
     public class Movement
     {
+        public string ToMapIndex { get; }
+        public Point Source { get; set; }
+        public Point Destination { get; set; }
+        public bool NeedHole { get; set; }
+        public bool NeedMove { get; set; }
+        public bool ShowOnBigMap { get; set; }
+        public int ConquestIndex { get; set; }
+        public int Icon { get; set; }
 
+        public Movement(string toMapIndex)
+        {
+            ToMapIndex = toMapIndex;
+        }
     }
 
     public class SafeZone
-    {}
+    {
+        public Point Location { get; set; }
+        public ushort Size { get; set; }
+        public bool StartPoint { get; set; }
+    }
 }
