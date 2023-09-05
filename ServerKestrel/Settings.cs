@@ -23,6 +23,7 @@ namespace ServerKestrel
         public bool AllowCreateAssassin { get; set; } = false;
         public bool AllowCreateArcher { get; set; } = false;
         public bool AllowDeleteCharacter { get; set; } = true;
+        public bool AllowStartGame { get; set; } = true;
 
         public static Settings Load()
         {

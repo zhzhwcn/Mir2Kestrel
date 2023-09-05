@@ -13,10 +13,16 @@ namespace ServerKestrel
     internal interface IAccount
     {
         public int Index { get; set; }
+        bool AdminAccount { get; set; }
     }
 
     internal interface IGameDataService
     {
         void LoadGameData();
+    }
+
+    internal interface IMainProcess
+    {
+        void Start();
     }
 }

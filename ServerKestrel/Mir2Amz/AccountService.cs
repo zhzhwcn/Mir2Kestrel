@@ -18,11 +18,11 @@ namespace ServerKestrel.Mir2Amz
 
         private readonly Dictionary<int, GameContext> _accountGameContexts = new();
 
-        public AccountService(IFreeSql sql, Settings settings, MainProcess mainProcess, ILogger<AccountService> logger)
+        public AccountService(IFreeSql sql, Settings settings, IMainProcess mainProcess, ILogger<AccountService> logger)
         {
             _sql = sql;
             _settings = settings;
-            _mainProcess = mainProcess;
+            _mainProcess = (MainProcess) mainProcess;
             _logger = logger;
         }
 
@@ -361,6 +361,46 @@ namespace ServerKestrel.Mir2Amz
             await context.SendPacket(new ServerPackets.DeleteCharacterSuccess { CharacterIndex = temp.Index });
         }
 
+        [PacketHandle]
+        public async Task StartGame(StartGame p, GameContext context)
+        {
+            if (context.Stage != GameStage.Select)
+            {
+                return;
+            }
 
+            if (!_settings.AllowStartGame && (context.Account == null || (context.Account != null && !context.Account.AdminAccount)))
+            {
+                await context.SendPacket(new ServerPackets.StartGame { Result = 0 });
+                return;
+            }
+
+            if (context.Account == null)
+            {
+                await context.SendPacket(new ServerPackets.StartGame { Result = 1 });
+                return;
+            }
+
+            var info = await _sql.Select<Character>().Where(c => c.Index == p.Index && c.AccountIndex == context.Account.Index).FirstAsync();
+            if (info == null)
+            {
+                await context.SendPacket(new ServerPackets.StartGame { Result = 2 });
+                return;
+            }
+
+            if (info.Banned)
+            {
+                if (info.ExpiryDate > _mainProcess.Now)
+                {
+                    await context.SendPacket(new ServerPackets.StartGameBanned { Reason = info.BanReason, ExpiryDate = info.ExpiryDate.Value });
+                    return;
+                }
+                info.Banned = false;
+                info.BanReason = string.Empty;
+                info.ExpiryDate = DateTime.MinValue;
+                await _sql.Update<Character>().SetSource(info).ExecuteAffrowsAsync();
+            }
+
+        }
     }
 }

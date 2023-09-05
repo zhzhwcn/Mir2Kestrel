@@ -22,10 +22,13 @@ namespace ServerKestrel
 
         public static WebApplication UseMirServer(this WebApplication app)
         {
+            app.Logger.LogInformation("当前运行目录：{}", Directory.GetCurrentDirectory());
             var gameDataService = app.Services.GetService<IGameDataService>()!;
             gameDataService.LoadGameData();
             var packetProcessor = app.Services.GetService<GamePacketProcessor>()!;
             packetProcessor.LoadPacketTypes();
+            var mainProcess = app.Services.GetService<IMainProcess>()!;
+            mainProcess.Start();
             return app;
         }
 

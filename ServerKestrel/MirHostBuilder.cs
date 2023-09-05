@@ -34,8 +34,8 @@ namespace ServerKestrel
             _builder.Services.AddSingleton<GamePacketProcessor>();
             _builder.Services.AddSingleton<PacketDispatcher>();
             _builder.Services.AddSingleton<IFreeSql>(fsql);
-            _builder.Services.AddSingleton<MainProcess>();
             _builder.Services.AddSingleton<IGameDataService, GameDataService>();
+            _builder.Services.AddSingleton<IMainProcess, MainProcess>();
 
             PacketDispatcher.LoadPacketHandlers(_builder.Services);
 

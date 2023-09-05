@@ -9,6 +9,8 @@ namespace ServerKestrel.Mir2Amz.Models
         [Column(IsIdentity = true, IsPrimary = true)]
         public int Index { get; set; }
 
+        public bool AdminAccount { get; set; }
+
         [Required] 
         public string AccountID { get; set; } = null!;
 

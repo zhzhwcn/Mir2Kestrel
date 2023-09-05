@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Drawing;
 using FreeSql.DataAnnotations;
 
 namespace ServerKestrel.Mir2Amz.Models
@@ -35,5 +36,24 @@ namespace ServerKestrel.Mir2Amz.Models
 
         public bool Deleted { get; set; }
         public DateTime? DeleteDate { get; set; }
+
+        //Location
+        public string? CurrentMapIndex { get; set; }
+        public Point CurrentLocation { get; set; }
+        public MirDirection Direction { get; set; }
+        public int BindMapIndex { get; set; }
+        public Point BindLocation { get; set; }
+
+        public int HP { get; set; }
+        public int MP { get; set; }
+        public long Experience { get; set; }
+
+        public AttackMode AMode { get; set; }
+        public PetMode PMode { get; set; }
+        public bool AllowGroup { get; set; }
+        public bool AllowTrade { get; set; }
+        public bool AllowObserve { get; set; }
+
+        public int PKPoints { get; set; }
     }
 }

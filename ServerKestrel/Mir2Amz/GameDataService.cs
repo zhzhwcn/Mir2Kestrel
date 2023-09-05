@@ -65,6 +65,13 @@ namespace ServerKestrel.Mir2Amz
                     var mapName = mapInfoData[1];
                     var extraInfo = line.Substring(infoEndIndex + 1).Trim();
 
+                    mapFileName = Path.Combine(AycqServerFolder, "Mir200", "Map", mapFileName);
+                    if (!File.Exists(mapFileName))
+                    {
+                        _logger.LogWarning("地图文件未找到：{}", mapIndex);
+                        continue;
+                    }
+
                     _mapDic[mapIndex] = new Map(mapIndex, extraInfo)
                     {
                         FileName = mapFileName,
